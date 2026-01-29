@@ -1,0 +1,16 @@
+# Ambiente virtual
+venv/
+.env
+logs/
+
+# Python
+__pycache__/
+*.pyc
+
+# Dados brutos e gerados
+data/raw/
+data/processed/*.csv
+data/processed/*.zip
+
+# VS Code
+.vscode/
