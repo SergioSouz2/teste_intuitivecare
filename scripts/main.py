@@ -1,8 +1,8 @@
 from scripts.config import logger
-from scripts.extract.download import download_and_extract
-from scripts.transform.processing import process
-from scripts.consolidate.consolidation import consolidate
-from scripts.analysis.resumo_processado import resumo_processado
+from scripts.etapa1.extract.download import download_and_extract
+from scripts.etapa1.transform.processing import process
+from scripts.etapa1.consolidate.consolidation import consolidate
+from scripts.etapa1.analysis.resumo_processado import resumo_processado
 
 def main():
     logger.info("PIPELINE INICIADO")
