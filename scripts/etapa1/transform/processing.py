@@ -36,7 +36,7 @@ def find_date_column(df):
 
 def is_despesa(text: str) -> bool:
     text = str(text).upper()
-    return any(k in text for k in ["DESPESA", "EVENTO", "SINISTRO"])
+    return "EVENTOS/SINISTROS" in text
 
 def process():
     logger.info("Processamento iniciado")
@@ -46,6 +46,7 @@ def process():
     for file in EXTRACT_DIR.rglob("*"):
         if not file.is_file() or file.suffix.lower() not in [".csv", ".txt", ".xlsx"]:
             continue
+        logger.info(f"📂 Lendo arquivo extraído: {file.name}")
         try:
             if file.suffix == ".xlsx":
                 chunks = [pd.read_excel(file)]
@@ -82,6 +83,7 @@ def process():
             final_chunk["Ano"] = final_chunk["Ano"].fillna(ano)
             final_chunk["Trimestre"] = final_chunk["Trimestre"].fillna(trimestre)
             final_chunk = final_chunk.dropna(subset=["CNPJ", "ValorDespesas"])
+            logger.info(f"➡️ Processando chunk do arquivo {file.name} | Linhas brutas: {len(chunk)}")
             final_chunk.to_csv(OUTPUT_FILE, mode="a", index=False, header=not OUTPUT_FILE.exists(), sep=";", encoding="utf-8")
             total_rows += len(final_chunk)
     logger.info(f"Processamento concluído: {total_rows:,} registros")

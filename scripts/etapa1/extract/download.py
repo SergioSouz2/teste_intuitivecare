@@ -31,17 +31,44 @@ def get_last_trimesters(url: str, limit=3) -> List[Tuple[str, str]]:
 
 def download_and_extract():
     logger.info("Download e extração iniciados")
+
     base = find_demonstracoes_url()
     files = get_last_trimesters(base)
-    for name, url in files:
-        zip_path = RAW_DIR / name
-        logger.info(f"Baixando {name}")
+
+    EXTRACT_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+    for zip_name, url in files:
+        zip_path = RAW_DIR / zip_name
+        trimestre = zip_path.stem  # ex: 1T2025
+
+        logger.info(f"Baixando {zip_name}")
         r = requests.get(url, stream=True, timeout=30)
         r.raise_for_status()
+
         with open(zip_path, "wb") as f:
             for chunk in r.iter_content(8192):
                 f.write(chunk)
-        logger.info(f"Extraindo {name}")
+
+        logger.info(f"Extraindo arquivos do trimestre {trimestre}")
+
         with zipfile.ZipFile(zip_path) as z:
-            z.extractall(EXTRACT_DIR / zip_path.stem)
+            extracted_count = 0
+
+            for member in z.namelist():
+                if member.endswith("/"):
+                    continue
+
+                extracted_count += 1
+                ext = member.split(".")[-1]
+                suffix = f"_{extracted_count}" if extracted_count > 1 else ""
+                new_name = f"{trimestre}{suffix}.{ext}"
+
+                target_path = EXTRACT_DIR / new_name
+
+                with z.open(member) as source, open(target_path, "wb") as target:
+                    target.write(source.read())
+
+                logger.info(f"Arquivo extraído: {new_name}")
+
     logger.info("Download e extração concluídos")
