@@ -12,25 +12,61 @@ AUDIT = PROCESSED_DIR / "auditoria.json"
 
 def consolidate():
     logger.info("Consolidação iniciada")
+    
+    if not INPUT.exists():
+        logger.warning(f"{INPUT} não encontrado. Consolidação abortada.")
+        return
+
     df = pd.read_csv(INPUT, sep=";", low_memory=False)
+    
+    if df.empty:
+        logger.warning("CSV vazio. Nada a consolidar.")
+        return
+
     # Converter valores
-    df["ValorDespesas"] = pd.to_numeric(df["ValorDespesas"].astype(str).str.replace(".", "").str.replace(",", "."), errors="coerce")
+    df["ValorDespesas"] = pd.to_numeric(
+        df.get("ValorDespesas", 0).astype(str).str.replace(".", "").str.replace(",", "."),
+        errors="coerce"
+    )
+    
     df = df[df["ValorDespesas"] > 0]
-    # Garantir Ano/Trimestre
+    if df.empty:
+        logger.warning("Todos os valores inválidos ou <= 0. Nada a consolidar.")
+        return
+    
+    # Preencher Ano/Trimestre
     anos = []
     trimestres = []
     for idx, row in df.iterrows():
-        file_path = Path(row.get("FilePath", ""))
+        file_path = Path(row.get("FilePath", "")) if "FilePath" in df.columns else Path("")
         ano, trimestre = extract_year_quarter(file_path)
         anos.append(ano)
         trimestres.append(trimestre)
     df["Ano"] = df["Ano"].fillna(pd.Series(anos))
     df["Trimestre"] = df["Trimestre"].fillna(pd.Series(trimestres))
-    # Agrupamento
-    final = df.groupby(["CNPJ", "RazaoSocial", "Ano", "Trimestre"], as_index=False).agg({"ValorDespesas": "sum"})
-    final.to_csv(OUTPUT, index=False)
+
+    # Padronizar RazaoSocial se coluna existir
+    if "RazaoSocial" in df.columns and "CNPJ" in df.columns:
+        df["RazaoSocial"] = df.groupby("CNPJ")["RazaoSocial"].transform(lambda x: x.ffill().bfill().iloc[0])
+    else:
+        df["RazaoSocial"] = ""
+        if "CNPJ" not in df.columns:
+            logger.warning("CNPJ não encontrado. Consolidação pode ficar incompleta.")
+            df["CNPJ"] = ""
+
+    # Agrupamento seguro
+    final = df.groupby(["CNPJ", "Ano", "Trimestre"], as_index=False).agg({
+        "RazaoSocial": "first",
+        "ValorDespesas": "sum"
+    })
+    final = final[["CNPJ", "RazaoSocial", "Ano", "Trimestre", "ValorDespesas"]]
+    
+    final.to_csv(OUTPUT, index=False, sep=";")
+    
+    # Compacta
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as z:
         z.write(OUTPUT, OUTPUT.name)
+    
     # Auditoria
     audit = {
         "linhas_lidas": int(len(df)),
@@ -43,4 +79,5 @@ def consolidate():
     }
     with open(AUDIT, "w", encoding="utf-8") as f:
         json.dump(audit, f, indent=2, ensure_ascii=False)
+    
     logger.info("Consolidação concluída")
