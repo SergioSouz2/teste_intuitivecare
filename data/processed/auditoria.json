@@ -1,0 +1,12 @@
+{
+  "total_linhas_lidas": 995568,
+  "linhas_data_invalida": 0,
+  "linhas_valor_zero_negativo": 279180,
+  "linhas_consolidadas": 189882,
+  "cnpjs_unicos": 808,
+  "trimestres_processados": 3,
+  "anos_processados": 1,
+  "valor_total": 7538722770349.24,
+  "valor_medio": 39702145.38686784,
+  "zip_criado": true
+}

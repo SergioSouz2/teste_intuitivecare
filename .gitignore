@@ -1,5 +1,7 @@
 # Ambiente virtual
 venv/
+.venv/
+
 .env
 logs/
 
@@ -11,6 +13,6 @@ __pycache__/
 data/raw/
 data/processed/*.csv
 data/processed/*.zip
-
+data/extracted/*
 # VS Code
 .vscode/

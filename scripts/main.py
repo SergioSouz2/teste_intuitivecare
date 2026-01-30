@@ -6,14 +6,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     # Tentar imports relativos (quando executado como módulo)
-    from .download import download_and_extract
-    from .processing import process
-    from .consolidation import consolidate
+    from .extract.download import download_and_extract
+    from .transform.processing import process
+    from .consolidate.consolidation import consolidate
 except ImportError:
     # Fallback para imports absolutos (quando executado como script)
-    from scripts.download import download_and_extract
-    from scripts.processing import process
-    from scripts.consolidation import consolidate
+    from scripts.extract.download import download_and_extract
+    from scripts.transform.processing import process
+    from scripts.consolidate.consolidation import consolidate
 
 
 def main():
