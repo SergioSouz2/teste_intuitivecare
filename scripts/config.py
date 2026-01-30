@@ -5,14 +5,12 @@ from dotenv import load_dotenv
 
 # ENV
 load_dotenv()
-
 BASE_URL = os.getenv("BASE_URL")
 if not BASE_URL:
     raise RuntimeError("BASE_URL não encontrada no .env")
 
 # PATHS
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 EXTRACT_DIR = DATA_DIR / "extracted"
@@ -24,7 +22,6 @@ for d in [RAW_DIR, EXTRACT_DIR, PROCESSED_DIR, LOG_DIR]:
 
 # LOGGING
 LOG_FILE = LOG_DIR / "app.log"
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -33,5 +30,4 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger("pipeline")
