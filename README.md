@@ -10,6 +10,14 @@
 
 </div>
 
+
+
+## Imagens
+
+<img width="1890" height="917" alt="image" src="https://github.com/user-attachments/assets/e3568310-da5c-40a1-96b1-09f121711294" />
+
+<img width="1893" height="907" alt="image" src="https://github.com/user-attachments/assets/0dd70f30-d1fc-4b17-be95-fdf34916e767" />
+
 ---
 
 Projeto que automatiza extração, transformação e análise de dados de saúde suplementar.
