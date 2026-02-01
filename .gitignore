@@ -16,3 +16,5 @@ data/processed/*.zip
 data/extracted/*
 # VS Code
 .vscode/
+
+frontend/node_modules/

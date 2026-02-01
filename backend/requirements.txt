@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary  # se for PostgreSQL
+pydantic
+python-dotenv
