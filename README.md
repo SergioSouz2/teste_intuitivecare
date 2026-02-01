@@ -513,9 +513,22 @@ scripts/
 │   ├── enrich.py             # Faz JOIN
 │   ├── validate.py           # Valida CNPJ
 │   └── aggregate.py          # Calcula estatísticas
+├── etapa3/
+│   ├── main.py                 # Orquestração da etapa 3
+│   ├── ddl/
+│   │    └── create_tables.sql  # Criação de tabelas normalizadas com UUID
+│   ├── import_csv/
+│   │    ├── import_consolidadas.py  # Importação consolidado_despesas.csv
+│   │    ├── import_agregadas.py     # Importação despesas_agregadas.csv
+│   │    └── import_operadoras.py    # Importação CSV operadoras
+│   ├── analysis/
+│   │    ├── query1_crescimento.py
+│   │    ├── query2_distribuicao_uf.py
+│   │    └── query3_acima_media.py
+│   └── utils.py               # Funções utilitárias (ex: tratamento de valores nulos, logging)
 └── utils/
-    └── date_utils.py         # Utilitários de data
-
+|   └── date_utils.py         # Utilitários de data
+|
 data/
 ├── raw/                       # ZIPs baixados
 ├── extracted/                 # Arquivos extraídos

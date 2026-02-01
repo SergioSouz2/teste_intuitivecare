@@ -1,9 +1,16 @@
 {
-  "linhas_lidas": 31562,
-  "linhas_consolidadas": 25304,
-  "cnpjs_unicos": 721,
-  "anos_processados": 1,
-  "trimestres_processados": 3,
-  "valor_total": 47968104596060.0,
-  "valor_medio": 1895672802.563231
+  "linhas_lidas": 28247,
+  "linhas_validas": 28247,
+  "linhas_consolidadas": 2115,
+  "operadoras_unicas": 722,
+  "anos_processados": [
+    2025
+  ],
+  "trimestres_processados": [
+    1,
+    2,
+    3
+  ],
+  "valor_total": 255561519164.90002,
+  "valor_medio": 120832869.58151302
 }
