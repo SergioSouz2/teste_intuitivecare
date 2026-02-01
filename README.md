@@ -63,6 +63,133 @@ python -c "import pandas, requests, bs4; print('✓ OK')"
 
 ---
 
+## Git
+
+### Branches Utilizadas
+
+```
+main ← etapa_3 ← etapa_2 ← etapa_1
+```
+
+**Estratégia:** Uma branch por etapa. Cada etapa é desenvolvida isoladamente e depois mergeada em main.
+
+```bash
+# Etapa 1
+git checkout -b etapa_1
+git add scripts/etapa1/
+git commit -m "[feat] Etapa 1: Download, processamento e consolidação"
+git checkout main
+git merge --no-ff etapa_1
+
+# Etapa 2
+git checkout -b etapa_2
+git add scripts/etapa2/
+git commit -m "[feat] Etapa 2: Enriquecimento, validação e agregação"
+git checkout main
+git merge --no-ff etapa_2
+
+# Etapa 3
+git checkout -b etapa_3
+git add scripts/etapa3/
+git commit -m "[feat] Etapa 3: Banco de dados e análise"
+git checkout main
+git merge --no-ff etapa_3
+```
+
+**Convenção de commits:** `[tipo] Descrição`
+- `[feat]`: Nova funcionalidade
+- `[fix]`: Correção
+- `[docs]`: Documentação
+
+---
+
+## Docker
+
+### Como Usar
+
+```bash
+# Iniciar (a partir da raiz do projeto)
+docker-compose up -d
+
+# Verificar status
+docker-compose ps
+
+# Conectar ao banco
+docker exec -it teste_intuitivecare_db psql -U postgres -d teste_intuitivecare
+
+# Executar script SQL
+docker exec teste_intuitivecare_db psql -U postgres -d teste_intuitivecare \
+  -f scripts/etapa3/ddl/create_tables.sql
+
+# Ver logs
+docker-compose logs -f
+
+# Parar containers
+docker-compose down
+
+# Parar e remover volumes (limpa dados)
+docker-compose down -v
+```
+
+### Estrutura
+
+- **docker-compose.yml (raiz)**: Orquestra 2 serviços (postgres + python) em rede compartilhada
+- **Dockerfile**: Imagem Python 3.11 com PostgreSQL client
+- **init.sql**: Executa DDL na criação do container
+
+**Por que Docker?** Mesmo ambiente para todo mundo. Sem "funciona na minha máquina".
+
+
+
+## Estrutura de Dados
+
+```
+scripts/
+├── config.py                  # Configuração centralizada
+├── etapa1/
+│   ├── main.py               # Orquestração
+│   ├── extract/download.py   # Baixa arquivos
+│   ├── transform/processing.py # Normaliza dados
+│   ├── consolidate/consolidation.py # Consolida
+│   └── analysis/resumo_processado.py # Relatório
+├── etapa2/
+│   ├── main.py               # Orquestração
+│   ├── download.py           # Baixa operadoras
+│   ├── enrich.py             # Faz JOIN
+│   ├── validate.py           # Valida CNPJ
+│   └── aggregate.py          # Calcula estatísticas
+├── etapa3/
+│   ├── main.py                 # Orquestração da etapa 3
+│   ├── ddl/
+│   │    └── create_tables.sql  # Criação de tabelas normalizadas com UUID
+│   ├── import_csv/
+│   │    ├── import_consolidadas.py  # Importação consolidado_despesas.csv
+│   │    ├── import_agregadas.py     # Importação despesas_agregadas.csv
+│   │    └── import_operadoras.py    # Importação CSV operadoras
+│   ├── analysis/
+│   │    ├── query1_crescimento.py
+│   │    ├── query2_distribuicao_uf.py
+│   │    └── query3_acima_media.py
+│   └── utils.py               # Funções utilitárias (ex: tratamento de valores nulos, logging)
+└── utils/
+|   └── date_utils.py         # Utilitários de data
+|
+data/
+├── raw/                       # ZIPs baixados
+├── extracted/                 # Arquivos extraídos
+└── processed/                 # CSVs finais
+    ├── consolidado_despesas.csv         # Etapa 1
+    ├── consolidado_enriquecido.csv      # Etapa 2
+    ├── consolidado_validado.csv         # Etapa 2
+    ├── despesas_agregadas.csv           # Etapa 2
+    └── auditoria.json                   # Relatório
+
+logs/
+└── app.log                    # Log de execução
+```
+
+---
+
 ## Etapa 1: Download, Processamento e Consolidação
 
 ### 1.1 Baixar os Arquivos
@@ -496,54 +623,7 @@ XX04 | 50k    ← Final (menor gasto)
 
 ---
 
-## Estrutura de Dados
 
-```
-scripts/
-├── config.py                  # Configuração centralizada
-├── etapa1/
-│   ├── main.py               # Orquestração
-│   ├── extract/download.py   # Baixa arquivos
-│   ├── transform/processing.py # Normaliza dados
-│   ├── consolidate/consolidation.py # Consolida
-│   └── analysis/resumo_processado.py # Relatório
-├── etapa2/
-│   ├── main.py               # Orquestração
-│   ├── download.py           # Baixa operadoras
-│   ├── enrich.py             # Faz JOIN
-│   ├── validate.py           # Valida CNPJ
-│   └── aggregate.py          # Calcula estatísticas
-├── etapa3/
-│   ├── main.py                 # Orquestração da etapa 3
-│   ├── ddl/
-│   │    └── create_tables.sql  # Criação de tabelas normalizadas com UUID
-│   ├── import_csv/
-│   │    ├── import_consolidadas.py  # Importação consolidado_despesas.csv
-│   │    ├── import_agregadas.py     # Importação despesas_agregadas.csv
-│   │    └── import_operadoras.py    # Importação CSV operadoras
-│   ├── analysis/
-│   │    ├── query1_crescimento.py
-│   │    ├── query2_distribuicao_uf.py
-│   │    └── query3_acima_media.py
-│   └── utils.py               # Funções utilitárias (ex: tratamento de valores nulos, logging)
-└── utils/
-|   └── date_utils.py         # Utilitários de data
-|
-data/
-├── raw/                       # ZIPs baixados
-├── extracted/                 # Arquivos extraídos
-└── processed/                 # CSVs finais
-    ├── consolidado_despesas.csv         # Etapa 1
-    ├── consolidado_enriquecido.csv      # Etapa 2
-    ├── consolidado_validado.csv         # Etapa 2
-    ├── despesas_agregadas.csv           # Etapa 2
-    └── auditoria.json                   # Relatório
-
-logs/
-└── app.log                    # Log de execução
-```
-
----
 
 
 ## Troubleshooting
@@ -554,6 +634,315 @@ logs/
 | `Connection refused` | Verifique internet e `.env` |
 | `Permission denied` | `chmod +x scripts/etapa1/main.py` |
 | `MemoryError` | Feche outros programas |
+
+---
+
+
+## Etapa 3: Banco de Dados e Análise
+
+### 3.1 Estrutura das Tabelas
+
+#### Diagrama Lógico
+
+```
++-----------------+        +-----------------------+        +----------------------+
+|   operadoras    | 1     N|  despesas_consolidadas|        |  despesas_agregadas  |
+|-----------------|--------|----------------------|        |--------------------|
+| id (UUID, PK)   |<------>| operadora_id (FK)    |        | id (UUID, PK)       |
+| cnpj            |        | ano                  |        | operadora_id (FK)   |
+| razao_social    |        | trimestre            |        | uf                  |
+| nome_fantasia   |        | valor_despesas       |        | total_despesas      |
+| ...             |        |                      |        | media_despesas      |
+| data_registro   |        |                      |        | desvio_padrao       |
++-----------------+        +----------------------+        +--------------------+
+```
+
+---
+
+### 3.2 Trade-offs Técnicos
+
+#### Normalização vs Desnormalização
+
+**Decisão: Normalização (Opção B)**
+
+Optou-se por uma abordagem normalizada, separando dados cadastrais das operadoras e dados financeiros, visando:
+
+- Reduzir redundância: a operadora X não se repete em centenas de linhas
+- Facilitar atualizações cadastrais independentemente de dados financeiros
+- Melhorar integridade referencial com chaves estrangeiras
+- Volume de dados financeiros cresce mais rapidamente que dados cadastrais
+- Análises exigem agregações temporais que beneficiam da estrutura normalizada
+
+A performance analítica não é impactada negativamente com índices apropriados.
+
+---
+
+#### Tipos de Dados - Valores Monetários
+
+**Decisão: NUMERIC(20,2)**
+
+Foi utilizado NUMERIC(20,2) para garantir precisão decimal em cálculos financeiros, evitando erros de arredondamento comuns em tipos FLOAT.
+
+| Opção | Vantagem | Desvantagem | Razão da rejeição |
+|-------|----------|------------|-------------------|
+| NUMERIC(20,2) | ✅ Precisão exata | Mais lento | **ESCOLHIDO** |
+| FLOAT | Rápido | Impreciso em centavos | Inaceitável em contexto financeiro |
+| INTEGER (centavos) | Rápido e exato | Reduz legibilidade | Aumenta complexidade de queries |
+
+Aplicado em: `valor_despesas`, `total_despesas`, `media_despesas`, `desvio_padrao`
+
+---
+
+#### Tipos de Dados - Datas
+
+**Decisão: DATE**
+
+O tipo DATE foi utilizado para campos de data por representar corretamente o domínio do dado, permitir validações nativas e facilitar operações temporais.
+
+| Tipo | Uso | Razão |
+|------|-----|-------|
+| **DATE** | `data_registro_ans` | ✅ Correto - só data importa |
+| VARCHAR | Evitar | Ambiguidades (DD/MM vs MM/DD) |
+| TIMESTAMP | Futuro | Complexidade desnecessária agora |
+
+---
+
+### 3.3 Estrutura das Tabelas
+
+#### Tabela operadoras
+
+```sql
+CREATE TABLE operadoras (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    registro_operadora INTEGER UNIQUE NOT NULL,
+    cnpj VARCHAR(14) NOT NULL,
+    razao_social VARCHAR(255) NOT NULL,
+    nome_fantasia VARCHAR(255),
+    modalidade VARCHAR(100),
+    logradouro VARCHAR(255),
+    numero VARCHAR(20),
+    complemento VARCHAR(100),
+    bairro VARCHAR(100),
+    cidade VARCHAR(100),
+    uf VARCHAR(20),
+    cep VARCHAR(8),
+    ddd VARCHAR(3),
+    telefone VARCHAR(20),
+    fax VARCHAR(20),
+    endereco_eletronico VARCHAR(255),
+    representante VARCHAR(255),
+    cargo_representante VARCHAR(100),
+    regiao_de_comercializacao INTEGER,
+    data_registro_ans DATE
+);
+```
+
+---
+
+#### Tabela despesas_consolidadas
+
+```sql
+CREATE TABLE despesas_consolidadas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    operadora_id UUID REFERENCES operadoras(id),  
+    registro_ans INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    trimestre INTEGER NOT NULL,
+    valor_despesas NUMERIC(20,2) NOT NULL
+);
+```
+
+---
+
+#### Tabela despesas_agregadas
+
+```sql
+CREATE TABLE despesas_agregadas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    operadora_id UUID REFERENCES operadoras(id),
+    razao_social VARCHAR(255),
+    uf VARCHAR(20),
+    total_despesas NUMERIC(20,2),
+    media_despesas NUMERIC(20,2),
+    desvio_padrao NUMERIC(20,2)
+);
+```
+
+---
+
+#### Tabelas Pendentes (Quarentena)
+
+```sql
+CREATE TABLE despesas_consolidadas_pendentes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    registro_ans INTEGER,
+    ano INTEGER,
+    trimestre INTEGER,
+    valor_despesas NUMERIC(20,2)
+);
+
+CREATE TABLE despesas_agregadas_pendentes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    razao_social VARCHAR(255),
+    uf VARCHAR(20),
+    total_despesas NUMERIC(20,2),
+    media_despesas NUMERIC(20,2),
+    desvio_padrao NUMERIC(20,2)
+);
+```
+
+Dados problemáticos (NULL obrigatório, formato inválido, etc.) ficam nestas tabelas para análise e correção manual.
+
+---
+
+### 3.4 Índices e Performance
+
+```sql
+CREATE INDEX idx_operadoras_cnpj ON operadoras(cnpj);
+CREATE INDEX idx_operadoras_uf ON operadoras(uf);
+CREATE INDEX idx_operadoras_registro ON operadoras(registro_operadora);
+
+CREATE INDEX idx_despesas_operadora ON despesas_consolidadas(operadora_id);
+CREATE INDEX idx_despesas_ano_trimestre ON despesas_consolidadas(ano, trimestre);
+
+CREATE INDEX idx_agregadas_operadora ON despesas_agregadas(operadora_id);
+CREATE INDEX idx_agregadas_uf ON despesas_agregadas(uf);
+```
+
+**Lógica dos índices:**
+- CNPJ, registro_operadora: campos de busca frequente
+- UF: filtros regionais aparecem muito nas análises
+- `operadora_id`: chave estrangeira usada em JOINs
+- `ano, trimestre`: filtros temporais combinados aparecem juntos
+
+---
+
+### 3.5 Tratamento de Inconsistências
+
+Durante a importação dos CSVs, foram encontrados alguns problemas comuns:
+
+| Problema | Tratamento | Por quê |
+|----------|-----------|--------|
+| NULL em CNPJ ou razão social | Rejeitar para tabela `_pendentes` | Dados obrigatórios incompletos não devem estar na produção |
+| Texto em campo numérico | Tentar conversão; se falhar, rejeitar | Identifica erro na fonte |
+| Datas em formato DD/MM/YYYY | Converter para ISO 8601 (YYYY-MM-DD) | Evita ambiguidade com MM/DD/YYYY |
+| Espaços em branco extras | TRIM | Dados "sujos" do CSV |
+| CNPJ com caracteres especiais | Remover e validar 14 dígitos | CNPJ deve ser apenas número |
+
+**Fluxo:**
+1. Dados entram em tabela temporária (sem constraints)
+2. Validações limpam e convertem os dados
+3. Dados válidos vão para tabelas principais
+4. Dados inválidos ficam em `_pendentes` para análise manual
+
+---
+
+### 3.6 Queries Analíticas
+
+#### Query 1: Crescimento de Despesas
+
+**Pergunta:** Quais as 5 operadoras com maior crescimento percentual entre o primeiro e último trimestre?
+
+**Desafio:** Algumas operadoras podem não ter dados em todos os períodos.
+
+**Solução:** Usar INNER JOIN garante que só comparamos operadoras que têm dados nos dois períodos (comparação justa).
+
+```sql
+WITH primeiro_trimestre AS (
+    SELECT operadora_id, valor_despesas
+    FROM despesas_consolidadas
+    WHERE (ano, trimestre) = (
+        SELECT ano, trimestre 
+        FROM despesas_consolidadas 
+        ORDER BY ano, trimestre 
+        LIMIT 1
+    )
+),
+ultimo_trimestre AS (
+    SELECT operadora_id, valor_despesas
+    FROM despesas_consolidadas
+    WHERE (ano, trimestre) = (
+        SELECT ano, trimestre 
+        FROM despesas_consolidadas 
+        ORDER BY ano DESC, trimestre DESC 
+        LIMIT 1
+    )
+)
+SELECT 
+    o.razao_social,
+    pt.valor_despesas AS despesas_inicio,
+    ut.valor_despesas AS despesas_fim,
+    ROUND(((ut.valor_despesas - pt.valor_despesas) / pt.valor_despesas * 100), 2) AS crescimento_pct
+FROM primeiro_trimestre pt
+INNER JOIN ultimo_trimestre ut ON pt.operadora_id = ut.operadora_id
+JOIN operadoras o ON pt.operadora_id = o.id
+ORDER BY crescimento_pct DESC
+LIMIT 5;
+```
+
+---
+
+#### Query 2: Distribuição por Estado
+
+**Pergunta:** Qual a distribuição de despesas por UF? Quais os 5 estados com maiores despesas totais?
+
+**Detalhe adicional:** Calcular também a média de despesas por operadora em cada UF.
+
+```sql
+SELECT 
+    o.uf,
+    COUNT(DISTINCT o.id) AS total_operadoras,
+    ROUND(SUM(dc.valor_despesas), 2) AS total_despesas_uf,
+    ROUND(AVG(dc.valor_despesas), 2) AS media_trimestral,
+    ROUND(
+        (SELECT AVG(soma_operadora)
+         FROM (
+            SELECT SUM(dc2.valor_despesas) AS soma_operadora
+            FROM despesas_consolidadas dc2
+            WHERE dc2.operadora_id IN (
+                SELECT id FROM operadoras WHERE uf = o.uf
+            )
+            GROUP BY dc2.operadora_id
+         ) sub
+        ), 2
+    ) AS media_por_operadora
+FROM despesas_consolidadas dc
+JOIN operadoras o ON dc.operadora_id = o.id
+GROUP BY o.uf
+ORDER BY total_despesas_uf DESC
+LIMIT 5;
+```
+
+**Por que subquery para média por operadora?**
+Se fizéssemos `AVG(AVG(...))`, as contas ficariam erradas porque operadoras com mais trimestres pesariam mais na média final. A subquery calcula corretamente: soma por operadora, depois faz média dessas somas.
+
+---
+
+#### Query 3: Operadoras Acima da Média
+
+**Pergunta:** Quantas operadoras tiveram despesas acima da média geral em pelo menos 2 dos 3 trimestres?
+
+```sql
+WITH media_geral AS (
+    SELECT AVG(valor_despesas) AS media FROM despesas_consolidadas
+)
+SELECT 
+    o.razao_social,
+    o.uf,
+    COUNT(*) AS trimestres_total,
+    COUNT(CASE WHEN dc.valor_despesas > mg.media THEN 1 END) AS acima_media,
+    ROUND(AVG(dc.valor_despesas), 2) AS media_operadora
+FROM despesas_consolidadas dc
+JOIN operadoras o ON dc.operadora_id = o.id
+CROSS JOIN media_geral mg
+GROUP BY o.id, o.razao_social, o.uf
+HAVING COUNT(CASE WHEN dc.valor_despesas > mg.media THEN 1 END) >= 2
+ORDER BY acima_media DESC;
+```
+
+**Por que CROSS JOIN?** Precisa trazer a média geral para cada linha.
+
+**Por que CASE WHEN dentro de COUNT?** Para contar apenas os trimestres acima da média, não todos.
 
 ---
 
