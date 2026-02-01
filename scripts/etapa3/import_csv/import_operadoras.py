@@ -1,13 +1,13 @@
+# import_operadoras.py
 from pathlib import Path
 import csv
 import logging
-from utils import sanitize_value, is_valid_cnpj
+from utils import sanitize_value, is_valid_cnpj, safe_int
 
-logger = logging.getLogger("pipeline")
+logger = logging.getLogger(__name__)
 
 def import_operadoras(conn, data_dir):
     csv_path = Path(data_dir) / "operadoras_ativas.csv"
-
     if not csv_path.exists():
         logger.warning(f"Arquivo não encontrado: {csv_path}")
         return
@@ -17,11 +17,9 @@ def import_operadoras(conn, data_dir):
 
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=';')
-
         for row in reader:
             try:
-                # Mapear diretamente do CSV
-                registro_operadora = row.get("REGISTRO_OPERADORA")
+                registro_operadora = safe_int(row.get("REGISTRO_OPERADORA"))
                 cnpj = sanitize_value(row.get("CNPJ"), 14)
                 razao_social = sanitize_value(row.get("Razao_Social"), 255)
                 nome_fantasia = sanitize_value(row.get("Nome_Fantasia"), 255)
@@ -31,7 +29,7 @@ def import_operadoras(conn, data_dir):
                 complemento = sanitize_value(row.get("Complemento"), 100)
                 bairro = sanitize_value(row.get("Bairro"), 100)
                 cidade = sanitize_value(row.get("Cidade"), 100)
-                uf = sanitize_value(row.get("UF"), 2)
+                uf = sanitize_value(row.get("UF"), 20)
                 cep = sanitize_value(row.get("CEP"), 8)
                 ddd = sanitize_value(row.get("DDD"), 3)
                 telefone = sanitize_value(row.get("Telefone"), 20)
@@ -39,53 +37,38 @@ def import_operadoras(conn, data_dir):
                 email = sanitize_value(row.get("Endereco_eletronico"), 255)
                 representante = sanitize_value(row.get("Representante"), 255)
                 cargo_representante = sanitize_value(row.get("Cargo_Representante"), 100)
+                regiao = safe_int(row.get("Regiao_de_Comercializacao"))
+                data_registro = row.get("Data_Registro_ANS") or None
 
-                # Campos que podem ser nulos
-                regiao = row.get("Regiao_de_Comercializacao")
-                regiao = int(regiao) if regiao and regiao.isdigit() else None
-
-                data_registro = row.get("Data_Registro_ANS")
-                data_registro = data_registro if data_registro else None
-
-                # Validações
-                if not registro_operadora or not registro_operadora.isdigit():
-                    logger.warning(f"Registro inválido: {row}")
-                    continue
-                if not cnpj or not is_valid_cnpj(cnpj) or not razao_social:
+                if not registro_operadora or not cnpj or not is_valid_cnpj(cnpj) or not razao_social:
                     logger.warning(f"Operadora inválida: {row}")
                     continue
 
-                # Insert isolado
-                try:
-                    cur.execute(
-                        """
-                        INSERT INTO operadoras(
-                            "REGISTRO_OPERADORA", "CNPJ", "Razao_Social",
-                            "Nome_Fantasia", "Modalidade", "Logradouro",
-                            "Numero", "Complemento", "Bairro", "Cidade", "UF",
-                            "CEP", "DDD", "Telefone", "Fax", "Endereco_eletronico",
-                            "Representante", "Cargo_Representante", "Regiao_de_Comercializacao",
-                            "Data_Registro_ANS"
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT ("REGISTRO_OPERADORA") DO NOTHING
-                        """,
-                        (
-                            int(registro_operadora), cnpj, razao_social, nome_fantasia,
-                            modalidade, logradouro, numero, complemento, bairro, cidade, uf,
-                            cep, ddd, telefone, fax, email, representante,
-                            cargo_representante, regiao, data_registro
-                        )
+                cur.execute(
+                    """
+                    INSERT INTO operadoras(
+                        registro_operadora, cnpj, razao_social,
+                        nome_fantasia, modalidade, logradouro,
+                        numero, complemento, bairro, cidade, uf,
+                        cep, ddd, telefone, fax, endereco_eletronico,
+                        representante, cargo_representante, regiao_de_comercializacao,
+                        data_registro_ans
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (registro_operadora) DO NOTHING
+                    """,
+                    (
+                        registro_operadora, cnpj, razao_social, nome_fantasia,
+                        modalidade, logradouro, numero, complemento, bairro, cidade, uf,
+                        cep, ddd, telefone, fax, email, representante,
+                        cargo_representante, regiao, data_registro
                     )
-                    inserted += 1
-                except Exception as e:
-                    logger.error(f"Erro ao importar operadora {registro_operadora}: {e}")
-                    conn.rollback()
-                    continue
-
+                )
+                inserted += 1
             except Exception as e:
-                logger.error(f"Erro processando linha: {row} | {e}")
+                logger.error(f"Erro ao processar linha {row}: {e}")
+                conn.rollback()
                 continue
 
     conn.commit()
     cur.close()
-    logger.info(f"Operadoras inseridas com sucesso: {inserted}")
+    logger.info(f"Operadoras inseridas: {inserted}")

@@ -1,7 +1,8 @@
 import logging
 import re
 
-logger = logging.getLogger("pipeline")
+logger = logging.getLogger(__name__)
+
 
 def sanitize_value(value, max_len):
     """Remove espaços e limita tamanho da string"""
@@ -18,3 +19,19 @@ def is_valid_cnpj(cnpj):
         return False
     cnpj = re.sub(r'\D', '', str(cnpj))
     return len(cnpj) == 14
+
+def safe_int(value):
+    try:
+        if value is None or value == '':
+            return None
+        return int(float(value))
+    except ValueError:
+        return None
+
+def safe_float(value):
+    try:
+        if value is None or value == '':
+            return None
+        return float(value)
+    except ValueError:
+        return None
